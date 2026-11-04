@@ -33,9 +33,8 @@ def get_data(lat,lon):
 def get_icon(icon_code):
     url = f"https://openweathermap.org/img/wn/{icon_code}@2x.png"
     response = r.get(url, timeout=10)
-    print(type(response))
     response.raise_for_status()
-    return tk.PhotoImage(data=base64.b64encode(response.content))
+    return tk.PhotoImage(data=base64.b64encode(response.content))# response.content sind Bytes welche mit Base 64 umgerechnet werden in ein img
 
 
 
@@ -74,11 +73,11 @@ def show_weather():
     for widget in (titel, ort_label, icon_label, temp_label, text_label, feucht_label, fehler):
         widget.config(bg=farbe)
     ort_label.config(text=city.title())
-    temp_label.config(text=f"{temp:.1f} °C")
+    temp_label.config(text=f"{round(temp,1)} °C")
     text_label.config(text=description.capitalize())
     feucht_label.config(text=f"Luftfeuchtigkeit: {humidity} %")
     icon_label.config(image=bild)
-    icon_label.image = bild  # Referenz behalten, sonst verschwindet das Bild
+    icon_label.image = bild  # Referenz behalten, sonst verschwindet das Bild"
 
     karte.delete_all_marker()  # alten Punkt entfernen
     karte.set_position(lat, lon)  # Karte auf den Ort zentrieren
