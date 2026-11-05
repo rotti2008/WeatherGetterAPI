@@ -1,12 +1,18 @@
 import requests as r
 import tkinter as tk
 import tkintermapview
-
+import json
 MY_API_KEY = "16baa08414d20342aea624b4ef474cd2"
 
 
 
 def get_cords(city_name):
+    """Holt die Koordinaten eines Ortes über die Geocoding-API von OpenWeatherMap.
+
+    Gibt (lat, lon) des ersten Treffers zurück.
+    Löst ValueError aus, wenn der Ort nicht gefunden wird,
+    und r.RequestException bei Netzwerk- oder Key-Problemen.
+    """
     url_cords = f"https://api.openweathermap.org/geo/1.0/direct?q={city_name}&limit=1&appid={MY_API_KEY}"
     response=r.get(url_cords,timeout=10)
     response.raise_for_status()
@@ -15,9 +21,15 @@ def get_cords(city_name):
         raise ValueError("Diesen Ort gibt es nicht, wurde nicht gefunden!")
     lat=data[0]["lat"]
     lon=data[0]["lon"]
+    # print(json.dumps(data, indent=2)) 
     return lat,lon
 
 def get_data(lat,lon):
+    """Holt das aktuelle Wetter für die Koordinaten (Celsius, deutsche Beschreibung).
+
+    Gibt (himmel, beschreibung, temperatur, luftfeuchtigkeit, icon) zurück.
+    Löst r.RequestException bei Netzwerk- oder Key-Problemen aus.
+    """
     url_data = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&lang=de&appid={MY_API_KEY}"
     response=r.get(url_data,timeout=10)
     response.raise_for_status() # löst bei Fehlercode (4xx/5xx) einen HTTPError aus
@@ -27,6 +39,7 @@ def get_data(lat,lon):
     temperatur=data["main"]["temp"]
     luftfeuchtigkeit=data["main"]["humidity"]
     icon=data["weather"][0]["icon"]
+    # print(json.dumps(data, indent=2)) 
     return himmel,beschreibung,temperatur,luftfeuchtigkeit,icon
       
 
@@ -34,7 +47,7 @@ def get_data(lat,lon):
 
 
 
-# Hintergrundfarbe je nach Himmel ("main" aus der API)
+# Hintergrundfarbe je nach Himmel
 FARBEN = {
     "Clear": "#f6c453",
     "Clouds": "#9aa5b1",
@@ -59,15 +72,21 @@ EMOJIS = {
     "13d": "❄️", "13n": "❄️",
     "50d": "🌫️", "50n": "🌫️",
 }
-STANDARD_EMOJI = "🌡️"  # falls der Code nicht im Dictionary steht
+STANDARD_EMOJI = "🌡️" 
 
 
 def show_weather():
+    """Liest den Ort aus dem Eingabefeld und aktualisiert das Fenster.
+
+    Setzt Texte, Emoji, Hintergrundfarbe und die Karte mit rotem Punkt.
+    Fehler werden als Meldung im Fenster angezeigt statt das Programm abzubrechen.
+    """
     city = entry.get()  # Text aus dem Eingabefeld
     try:
         lat, lon = get_cords(city)
         sky, description, temp, humidity, icon = get_data(lat, lon)
     except ValueError as e:
+        print(e)
         fehler.config(text=str(e))  # Meldung im Fenster statt print
         return  # Funktion hier beenden, nichts anzeigen
     except r.RequestException as e:
@@ -85,8 +104,8 @@ def show_weather():
     feucht_label.config(text=f"Luftfeuchtigkeit: {humidity} %")
     icon_label.config(text=EMOJIS.get(icon, STANDARD_EMOJI))
 
-    karte.delete_all_marker()  # alten Punkt entfernen
-    karte.set_position(lat, lon)  # Karte auf den Ort zentrieren
+    karte.delete_all_marker()  
+    karte.set_position(lat, lon)  
     karte.set_zoom(11)
     karte.set_marker(lat, lon, marker_color_circle="red", marker_color_outside="red")  # roter Punkt
 
