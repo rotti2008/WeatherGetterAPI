@@ -1,5 +1,4 @@
 import requests as r
-import base64
 import tkinter as tk
 import tkintermapview
 
@@ -30,11 +29,6 @@ def get_data(lat,lon):
     icon=data["weather"][0]["icon"]
     return himmel,beschreibung,temperatur,luftfeuchtigkeit,icon
       
-def get_icon(icon_code):
-    url = f"https://openweathermap.org/img/wn/{icon_code}@2x.png"
-    response = r.get(url, timeout=10)
-    response.raise_for_status()
-    return tk.PhotoImage(data=base64.b64encode(response.content))# response.content sind Bytes welche mit Base 64 umgerechnet werden in ein img
 
 
 
@@ -53,13 +47,26 @@ FARBEN = {
 }
 STANDARD_FARBE = "#8fb8de"
 
+# Icon-Code der API (d = Tag, n = Nacht) -> Emoji
+EMOJIS = {
+    "01d": "☀️", "01n": "🌙",
+    "02d": "⛅", "02n": "☁️",
+    "03d": "☁️", "03n": "☁️",
+    "04d": "☁️", "04n": "☁️",
+    "09d": "🌧️", "09n": "🌧️",
+    "10d": "🌦️", "10n": "🌧️",
+    "11d": "⛈️", "11n": "⛈️",
+    "13d": "❄️", "13n": "❄️",
+    "50d": "🌫️", "50n": "🌫️",
+}
+STANDARD_EMOJI = "🌡️"  # falls der Code nicht im Dictionary steht
+
 
 def show_weather():
     city = entry.get()  # Text aus dem Eingabefeld
     try:
         lat, lon = get_cords(city)
         sky, description, temp, humidity, icon = get_data(lat, lon)
-        bild = get_icon(icon)
     except ValueError as e:
         fehler.config(text=str(e))  # Meldung im Fenster statt print
         return  # Funktion hier beenden, nichts anzeigen
@@ -76,8 +83,7 @@ def show_weather():
     temp_label.config(text=f"{round(temp,1)} °C")
     text_label.config(text=description.capitalize())
     feucht_label.config(text=f"Luftfeuchtigkeit: {humidity} %")
-    icon_label.config(image=bild)
-    icon_label.image = bild  # Referenz behalten, sonst verschwindet das Bild"
+    icon_label.config(text=EMOJIS.get(icon, STANDARD_EMOJI))
 
     karte.delete_all_marker()  # alten Punkt entfernen
     karte.set_position(lat, lon)  # Karte auf den Ort zentrieren
@@ -107,7 +113,7 @@ fehler.pack()
 ort_label = tk.Label(root, text="", font=("Helvetica", 22, "bold"), bg=STANDARD_FARBE)
 ort_label.pack(pady=(20, 0))
 
-icon_label = tk.Label(root, bg=STANDARD_FARBE)
+icon_label = tk.Label(root, text="", font=("Noto Color Emoji", 48), bg=STANDARD_FARBE)
 icon_label.pack()
 
 temp_label = tk.Label(root, text="", font=("Helvetica", 48, "bold"), bg=STANDARD_FARBE)
